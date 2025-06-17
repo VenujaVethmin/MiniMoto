@@ -29,11 +29,11 @@ const ProductDetailPage = () => {
     name: "Yamaha YZF-R1M Racing Edition",
     brand: "Yamaha",
     price: 8500,
+    badge: "Limited Edition",
     originalPrice: 10000,
     discount: 15,
     rating: 4.9,
     reviews: 156,
-    inStock: true,
     stockCount: 12,
     images: ["/bike-1.jpg", "/bike-1.jpg", "/bike-1.jpg", "/bike-1.jpg"],
     description:
@@ -48,28 +48,17 @@ const ProductDetailPage = () => {
 
   const relatedProducts = [
     {
-      id: 2,
-      name: "Honda CBR1000RR",
-      price: 7800,
+      id: 1,
+      name: "Yamaha YZF-R1M",
+      brand: "Yamaha",
+      price: "LKR 8,500",
+      originalPrice: "LKR 10,000",
       image: "/bike-1.jpg",
-      rating: 4.7,
+      rating: 4.9,
+      badge: "Limited Edition",
       stockCount: 12,
-      
     },
-    {
-      id: 3,
-      name: "Kawasaki Ninja H2R",
-      price: 9200,
-      image: "/bike-1.jpg",
-      rating: 4.8,
-    },
-    {
-      id: 4,
-      name: "Ducati Panigale V4",
-      price: 11500,
-      image: "/bike-1.jpg",
-      rating: 5.0,
-    },
+    
   ];
 
   const handleQuantityChange = (type) => {
