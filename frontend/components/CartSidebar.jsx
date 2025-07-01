@@ -1,20 +1,19 @@
 
 "use client";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useCart } from "@/context/cartContext";
+import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
-import Link from "next/link";
 import {
-  FiX,
+  FiArrowRight,
   FiMinus,
   FiPlus,
-  FiTrash2,
   FiShoppingBag,
-  FiArrowRight,
+  FiTrash2,
+  FiX,
 } from "react-icons/fi";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useCart } from "@/context/cartContext";
+import Link from "next/link";
 
 
 const CartSidebar = ({ isOpen, onClose }) => {
@@ -27,8 +26,10 @@ const CartSidebar = ({ isOpen, onClose }) => {
     clearCart,
   } = useCart();
 
+  console.log("Cart items:", items);
+
   const formatPrice = (price) => {
-    const numericPrice = parseFloat(price.replace(/[^0-9.-]+/g, ""));
+    const numericPrice = parseFloat(price);
     return `LKR ${numericPrice.toLocaleString()}`;
   };
 
@@ -107,7 +108,11 @@ const CartSidebar = ({ isOpen, onClose }) => {
                       {/* Product Image */}
                       <div className="relative w-16 h-16 bg-white rounded-lg overflow-hidden flex-shrink-0">
                         <Image
-                          src={item.image}
+                          src={
+                            item.images?.[0]
+                              ? `http://localhost:3001${item.images[0]}`
+                              : "/images.png"
+                          }
                           alt={item.name}
                           fill
                           className="object-cover"
@@ -196,15 +201,18 @@ const CartSidebar = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Checkout Button */}
-                <Button
-                  className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 rounded-xl font-semibold"
-                  onClick={onClose}
-                >
-                  Proceed to Checkout
-                  <FiArrowRight className="ml-2 w-4 h-4" />
-                </Button>
+                <Link href={"/checkout"}>
+                  <Button
+                    className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 rounded-xl font-semibold"
+                    onClick={onClose}
+                  >
+                    Proceed to Checkout
+                    <FiArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </Link>
 
                 {/* Continue Shopping */}
+                <Link href={"/all"}>
                 <Button
                   variant="outline"
                   className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 py-2 rounded-xl"
@@ -212,6 +220,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
                 >
                   Continue Shopping
                 </Button>
+                </Link>
               </div>
             )}
           </motion.div>

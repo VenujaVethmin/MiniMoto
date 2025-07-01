@@ -10,14 +10,80 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+
+enum Role {
+  USER
+  ADMIN
+}
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
+  password  String
   name      String?
   address   String?
+  role     Role     @default(USER)
+
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  brand         String
+  price         Float
+  originalPrice Float
+  description   String
+  stockCount    Int
+  category      String
+  badge         String?
+  features      String[]   
+  images        String[]   
+
+  orders        Order[]    
+  
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+
+
+enum OrderStatus {
+  PENDING     // user started checkout but hasn’t paid
  
+ 
+  DELIVERED   // confirmed by customer
+  CANCELLED
+}
+
+
+model Order {
+  id            String       @id @default(cuid())
+  
+  products      Product[] 
+
+
+
+
+  /// --- money & status ---
+  subtotal      Decimal      @db.Decimal(10, 2)
+  shippingCost  Decimal      @db.Decimal(10, 2)  @default(0)
+  total         Decimal      @db.Decimal(10, 2)  // subtotal + shipping – discounts
+  orderStatus        OrderStatus  @default(PENDING)
+
+  firstName        String
+  lastName         String
+  email            String
+  phone            String
+  address          String
+  city             String
+  province         String
+  postalCode       String
+  additionalNotes  String?
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }

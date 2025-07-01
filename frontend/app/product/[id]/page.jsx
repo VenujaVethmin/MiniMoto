@@ -18,48 +18,31 @@ import {
   FiTruck,
 } from "react-icons/fi";
 
+import axiosInstance from "@/lib/axiosInstance";
+import { useParams } from "next/navigation";
+
+import useSWR from "swr";
+
+
+const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
+
 const ProductDetailPage = () => {
+
+  const params = useParams();
+
+  const {
+    data: product,
+    isLoading,
+    mutate,
+  } = useSWR(`/getProductById/${params.id}`, fetcher);
+
+  console.log(product)
+
+
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
 
-  // Sample product data
-  const product = {
-    id: 1,
-    name: "Yamaha YZF-R1M Racing Edition",
-    brand: "Yamaha",
-    price: 8500,
-    badge: "Limited Edition",
-    originalPrice: 10000,
-    discount: 15,
-    rating: 4.9,
-    reviews: 156,
-    stockCount: 12,
-    images: ["/bike-1.jpg", "/bike-1.jpg", "/bike-1.jpg", "/bike-1.jpg"],
-    description:
-      "Experience the legendary Yamaha YZF-R1M in perfect 1:12 scale detail. This premium die-cast replica captures every nuance of the original superbike.",
-    features: [
-      "Official Yamaha licensing",
-      "1:12 scale precision",
-      "Die-cast metal construction",
-      "Authentic racing colors",
-    ],
-  };
-
-  const relatedProducts = [
-    {
-      id: 1,
-      name: "Yamaha YZF-R1M",
-      brand: "Yamaha",
-      price: "LKR 8,500",
-      originalPrice: "LKR 10,000",
-      image: "/bike-1.jpg",
-      rating: 4.9,
-      badge: "Limited Edition",
-      stockCount: 12,
-    },
-    
-  ];
 
   const handleQuantityChange = (type) => {
     if (type === "increase") {
@@ -94,7 +77,7 @@ const ProductDetailPage = () => {
               All Bikes
             </Link>
             <FiChevronRight className="w-4 h-4" />
-            <span className="text-gray-900">{product.name}</span>
+            <span className="text-gray-900">{product?.name}</span>
           </nav>
         </div>
       </div>
@@ -108,18 +91,18 @@ const ProductDetailPage = () => {
             <div className="relative bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="aspect-square relative">
                 <Image
-                  src={product.images[selectedImage]}
-                  alt={product.name}
+                  src={product?.images ? `${process.env.NEXT_PUBLIC_BACKEND_URL}${product?.images?.[selectedImage]}` : "/images.png"}
+                  alt={product?.name || "Product image"}
                   fill
                   className="object-cover"
                 />
               </div>
 
               {/* Discount Badge */}
-              {product.discount > 0 && (
+              {product?.discount > 0 && (
                 <div className="absolute top-4 left-4">
                   <Badge className="bg-green-500 text-white font-semibold">
-                    {product.discount}% OFF
+                    {product?.discount}% OFF
                   </Badge>
                 </div>
               )}
@@ -127,7 +110,7 @@ const ProductDetailPage = () => {
 
             {/* Thumbnail Images */}
             <div className="grid grid-cols-4 gap-3">
-              {product.images.map((image, index) => (
+              {product?.images.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
@@ -138,7 +121,7 @@ const ProductDetailPage = () => {
                   }`}
                 >
                   <Image
-                    src={image}
+                    src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${image}`}
                     alt={`View ${index + 1}`}
                     fill
                     className="object-cover"
@@ -153,10 +136,10 @@ const ProductDetailPage = () => {
             {/* Title & Rating */}
             <div>
               <Badge variant="outline" className="text-gray-600 mb-2">
-                {product.brand}
+                {product?.brand}
               </Badge>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                {product.name}
+                {product?.name}
               </h1>
               <div className="flex items-center space-x-2 mb-4">
                 <div className="flex items-center">
@@ -164,7 +147,7 @@ const ProductDetailPage = () => {
                     <FiStar
                       key={i}
                       className={`w-4 h-4 ${
-                        i < Math.floor(product.rating)
+                        i < Math.floor(product?.rating)
                           ? "text-yellow-500 fill-current"
                           : "text-gray-300"
                       }`}
@@ -172,7 +155,7 @@ const ProductDetailPage = () => {
                   ))}
                 </div>
                 <span className="text-gray-600">
-                  {product.rating} ({product.reviews} reviews)
+                  {product?.rating} ({product?.reviews} reviews)
                 </span>
               </div>
             </div>
@@ -180,11 +163,11 @@ const ProductDetailPage = () => {
             {/* Price */}
             <div className="flex items-center space-x-4">
               <span className="text-3xl font-bold text-red-600">
-                LKR {product.price.toLocaleString()}
+                LKR {product?.price.toLocaleString()}
               </span>
-              {product.originalPrice > product.price && (
+              {product?.originalPrice > product?.price && (
                 <span className="text-xl text-gray-400 line-through">
-                  LKR {product.originalPrice.toLocaleString()}
+                  LKR {product?.originalPrice.toLocaleString()}
                 </span>
               )}
             </div>
@@ -193,7 +176,7 @@ const ProductDetailPage = () => {
             <div className="flex items-center space-x-2">
               <FiCheck className="w-5 h-5 text-green-500" />
               <span className="text-green-600 font-medium">
-                In Stock ({product.stockCount} available)
+                In Stock ({product?.stockCount} available)
               </span>
             </div>
 
@@ -201,7 +184,7 @@ const ProductDetailPage = () => {
             <div>
               <h3 className="font-bold text-gray-900 mb-3">Description</h3>
               <p className="text-gray-700 leading-relaxed">
-                {product.description}
+                {product?.description}
               </p>
             </div>
 
@@ -209,7 +192,7 @@ const ProductDetailPage = () => {
             <div>
               <h3 className="font-bold text-gray-900 mb-3">Key Features</h3>
               <ul className="space-y-2">
-                {product.features.map((feature, index) => (
+                {product?.features.map((feature, index) => (
                   <li key={index} className="flex items-center space-x-2">
                     <FiCheck className="w-4 h-4 text-green-500" />
                     <span className="text-gray-700">{feature}</span>
@@ -238,7 +221,7 @@ const ProductDetailPage = () => {
                     variant="ghost"
                     size="icon"
                     className="h-10 w-10"
-                    disabled={quantity >= product.stockCount}
+                    disabled={quantity >= product?.stockCount}
                   >
                     <FiPlus className="w-4 h-4" />
                   </Button>
@@ -253,12 +236,7 @@ const ProductDetailPage = () => {
                   <FiShoppingCart className="w-5 h-5 mr-2" />
                   Add to Cart
                 </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 border-red-500 text-red-600 hover:bg-red-500 hover:text-white py-3 rounded-xl"
-                >
-                  Buy Now
-                </Button>
+               
               </div>
             </div>
 
@@ -281,16 +259,16 @@ const ProductDetailPage = () => {
         </div>
 
         {/* Related Products */}
-        <div className="mt-16">
+        {/* <div className="mt-16">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             You may also like
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {relatedProducts.map((item , index) => (
+            {relatedProducts?.map((item , index) => (
             <ProductCard bike={item} index={index} key={item.id}/>
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

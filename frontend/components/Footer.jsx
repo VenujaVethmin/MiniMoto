@@ -37,11 +37,11 @@ const Footer = () => {
           <div>
             <Link href="/" className="flex items-center space-x-3 mb-6">
               <div className="relative w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">MM</span>
+                <span className="text-white font-bold text-lg">MR</span>
               </div>
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">
-                  MiniMoto.lk
+                  MiniRider.lk
                 </h1>
                 <p className="text-xs text-gray-400 -mt-1">Premium Collectibles</p>
               </div>
@@ -92,7 +92,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-3 text-gray-300">
                 <FiPhone className="w-4 h-4 text-red-400 flex-shrink-0" />
-                <span className="text-sm">+94 77 123 4567</span>
+                <span className="text-sm"> +94 76 113 6607</span>
               </div>
               <div className="flex items-center space-x-3 text-gray-300">
                 <FiMail className="w-4 h-4 text-red-400 flex-shrink-0" />

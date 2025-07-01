@@ -16,48 +16,19 @@ import {
   FiTruck
 } from "react-icons/fi";
 
-const HomePage = () => {
+import axiosInstance from "@/lib/axiosInstance";
+import useSWR from "swr";
 
-  const featuredBikes = [
-    {
-      id: 1,
-      name: "Yamaha YZF-R1M",
-      brand: "Yamaha",
-      price: "LKR 8,500",
-      originalPrice: "LKR 10,000",
-      image: "/bike-1.jpg",
-      rating: 4.9,
-      badge: "Limited Edition",
-      stockCount: 12,
-    },
-    {
-      id: 2,
-      name: "Kawasaki Ninja H2R",
-      brand: "Kawasaki",
-      price: "LKR 9,200",
-      image: "/bike-1.jpg",
-      rating: 4.8,
-      badge: "Best Seller",
-    },
-    {
-      id: 3,
-      name: "Ducati Panigale V4",
-      brand: "Ducati",
-      price: "LKR 11,500",
-      image: "/bike-1.jpg",
-      rating: 5.0,
-      badge: "Premium",
-    },
-    {
-      id: 4,
-      name: "Honda CBR1000RR",
-      brand: "Honda",
-      price: "LKR 7,800",
-      image: "/bike-1.jpg",
-      rating: 4.7,
-      badge: "New Arrival",
-    },
-  ];
+
+const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
+
+const HomePage = () => {
+  const {
+    data: featuredBikes,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR("/home", fetcher);
 
   const whyChooseUs = [
     {
@@ -275,7 +246,7 @@ const HomePage = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {featuredBikes.map((bike, index) => (
+            {featuredBikes?.map((bike, index) => (
               <ProductCard key={bike.id} bike={bike} index={index}/>
             ))}
           </div>

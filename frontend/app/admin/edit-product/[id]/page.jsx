@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import {
   FiArrowLeft,
   FiUpload,
@@ -13,12 +14,30 @@ import {
   FiEye,
   FiPlus,
   FiMinus,
+  FiTrash2,
+  FiLoader,
 } from "react-icons/fi";
 import axiosInstance from "@/lib/axiosInstance";
+import useSWR from "swr";
+
+const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
+
+const EditProductPage = () => {
+  const params = useParams();
+  const router = useRouter();
+  const productId = params.id;
+
+  // Fetch existing product data
+  
+  const {
+    data: productData,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR(`/getProductById/${params.id}`, fetcher);
 
 
 
-const AddProductPage = () => {
   const [formData, setFormData] = useState({
     name: "",
     brand: "",
@@ -31,12 +50,14 @@ const AddProductPage = () => {
     features: [""],
   });
 
-  const [images, setImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [newImages, setNewImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedImagePaths, setUploadedImagePaths] = useState([]);
-  const [uploadProgress, setUploadProgress] = useState({}); // Track per-image progress
-  const [uploadStatus, setUploadStatus] = useState({}); // success/error for each file
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [uploadStatus, setUploadStatus] = useState({});
+  const [imagesToDelete, setImagesToDelete] = useState([]);
 
   const categories = [
     "Racing Bikes",
@@ -56,6 +77,30 @@ const AddProductPage = () => {
     "Premium",
   ];
 
+  // Populate form when product data is loaded
+  useEffect(() => {
+    if (productData) {
+      setFormData({
+        name: productData.name || "",
+        brand: productData.brand || "",
+        price: productData.price || "",
+        originalPrice: productData.originalPrice || "",
+        description: productData.description || "",
+        stockCount: productData.stockCount || "",
+        category: productData.category || "",
+        badge: productData.badge || "",
+        features:
+          productData.features && productData.features.length > 0
+            ? productData.features
+            : [""],
+      });
+
+      if (productData.images) {
+        setExistingImages(productData.images);
+      }
+    }
+  }, [productData]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -64,32 +109,19 @@ const AddProductPage = () => {
     }));
   };
 
-  // const handleImageUpload = (e) => {
-  //   const files = Array.from(e.target.files);
-  //   if (files.length + images.length > 6) {
-  //     alert("Maximum 6 images allowed");
-  //     return;
-  //   }
-
-  //   const newImages = [...images, ...files];
-  //   setImages(newImages);
-
-  //   // Create preview URLs
-  //   const newPreviewUrls = files.map((file) => URL.createObjectURL(file));
-  //   setPreviewImages((prev) => [...prev, ...newPreviewUrls]);
-  // };
-
-  const handleImageUpload = async (e) => {
+  const handleNewImageUpload = async (e) => {
     const files = Array.from(e.target.files);
+    const totalImages =
+      existingImages.length + uploadedImagePaths.length + files.length;
 
-    if (files.length + uploadedImagePaths.length > 6) {
+    if (totalImages > 6) {
       alert("Maximum 6 images allowed");
       return;
     }
 
     for (const file of files) {
       const formData = new FormData();
-      formData.append("images", file); // Your backend expects "images" as the field
+      formData.append("images", file);
 
       try {
         // Show preview immediately
@@ -98,7 +130,6 @@ const AddProductPage = () => {
 
         // Start upload with progress
         const res = await axiosInstance.post("/upload", formData, {
-         
           onUploadProgress: (progressEvent) => {
             const percent = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
@@ -108,7 +139,7 @@ const AddProductPage = () => {
         });
 
         // Handle success
-        const uploadedPath = res.data.files[0]; // Assuming one image at a time
+        const uploadedPath = res.data.files[0];
         setUploadedImagePaths((prev) => [...prev, uploadedPath]);
         setUploadStatus((prev) => ({ ...prev, [file.name]: "success" }));
       } catch (error) {
@@ -118,13 +149,18 @@ const AddProductPage = () => {
       }
     }
   };
-  
 
-  const removeImage = (index) => {
-    const newImages = images.filter((_, i) => i !== index);
+  const removeExistingImage = (index) => {
+    const imageToRemove = existingImages[index];
+    setImagesToDelete((prev) => [...prev, imageToRemove]);
+    setExistingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeNewImage = (index) => {
     const newPreviews = previewImages.filter((_, i) => i !== index);
-    setImages(newImages);
+    const newUploaded = uploadedImagePaths.filter((_, i) => i !== index);
     setPreviewImages(newPreviews);
+    setUploadedImagePaths(newUploaded);
   };
 
   const addFeature = () => {
@@ -155,40 +191,30 @@ const AddProductPage = () => {
     setIsSubmitting(true);
 
     try {
-      const res = await axiosInstance.post("/addProduct", {
+      // Combine existing images (minus deleted ones) with new uploaded images
+      const allImages = [...existingImages, ...uploadedImagePaths];
+
+      const updateData = {
         ...formData,
-        images: uploadedImagePaths,
-      });
+        images: allImages,
+        imagesToDelete: imagesToDelete,
+      };
 
-      if (res.status === 201) {
-        alert("Product added successfully!");
-        // Reset form after successful submission
-        setFormData({
-          name: "",
-          brand: "",
-          price: "",
-          originalPrice: "",
-          description: "",
-          stockCount: "",
-          category: "",
-          badge: "",
-          features: [""],
-        });
-        setImages([]);
-        setPreviewImages([]);
-        setUploadedImagePaths([]);
-        setUploadProgress({});
-        setUploadStatus({});
-      
+      const res = await axiosInstance.put(
+        `/updateProduct/${productId}`,
+        updateData
+      );
 
-
+      if (res.status === 200) {
+        alert("Product updated successfully!");
+        router.push("/admin/products");
       } else {
-        alert("Failed to add product");
+        alert("Failed to update product");
       }
     } catch (error) {
-      console.error("Error adding product:", error);
-    }
-    finally{
+      console.error("Error updating product:", error);
+      alert("Failed to update product");
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -204,13 +230,44 @@ const AddProductPage = () => {
     return 0;
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading product...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Product Not Found
+          </h2>
+          <p className="text-gray-600 mb-4">
+            The product you're looking for doesn't exist.
+          </p>
+          <Link href="/admin/products">
+            <Button className="bg-red-600 hover:bg-red-700">
+              <FiArrowLeft className="w-4 h-4 mr-2" />
+              Back to Products
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-          
             <div className="flex items-center space-x-4">
               <Link href="/admin/products">
                 <Button variant="outline" size="sm">
@@ -218,9 +275,12 @@ const AddProductPage = () => {
                   Back to Products
                 </Button>
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Add New Product
-              </h1>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Edit Product
+                </h1>
+                <p className="text-gray-600">Update product information</p>
+              </div>
             </div>
             <div className="flex space-x-3">
               <Button variant="outline">
@@ -233,7 +293,7 @@ const AddProductPage = () => {
                 className="bg-red-600 hover:bg-red-700"
               >
                 <FiSave className="w-4 h-4 mr-2" />
-                {isSubmitting ? "Saving..." : "Save Product"}
+                {isSubmitting ? "Updating..." : "Update Product"}
               </Button>
             </div>
           </div>
@@ -440,59 +500,94 @@ const AddProductPage = () => {
             </Card>
           </div>
 
-          {/* Image Upload */}
+          {/* Image Management */}
           <div className="space-y-6">
             <Card>
               <CardContent className="p-6">
                 <h2 className="text-lg font-semibold mb-4">Product Images</h2>
-                
 
-                {/* Upload Area */}
+                {/* Existing Images */}
+                {existingImages.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">
+                      Current Images
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {existingImages.map((image, index) => (
+                        <div key={index} className="relative group">
+                          <div className="aspect-square relative rounded-lg overflow-hidden">
+                            <Image
+                              src={`http://localhost:3001${image}`}
+                              alt={`Current ${index + 1}`}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            onClick={() => removeExistingImage(index)}
+                            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            size="sm"
+                          >
+                            <FiX className="w-3 h-3" />
+                          </Button>
+                          {index === 0 && (
+                            <Badge className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs">
+                              Main
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload New Images */}
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mb-4">
                   <input
                     type="file"
                     multiple
                     accept="image/*"
-                    onChange={handleImageUpload}
+                    onChange={handleNewImageUpload}
                     className="hidden"
                     id="image-upload"
                   />
                   <label htmlFor="image-upload" className="cursor-pointer">
                     <FiUpload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm text-gray-600">
-                      Click to upload images (Max 6)
+                      Click to upload new images
                     </p>
                   </label>
                 </div>
 
-                {/* Image Previews */}
+                {/* New Image Previews */}
                 {previewImages.length > 0 && (
-                  <div className="grid grid-cols-2 gap-3">
-                    {previewImages.map((preview, index) => (
-                      <div key={index} className="relative group">
-                        <div className="aspect-square relative rounded-lg overflow-hidden">
-                          <Image
-                            src={preview}
-                            alt={`Preview ${index + 1}`}
-                            fill
-                            className="object-cover"
-                          />
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">
+                      New Images
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {previewImages.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <div className="aspect-square relative rounded-lg overflow-hidden">
+                            <Image
+                              src={preview}
+                              alt={`New ${index + 1}`}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            onClick={() => removeNewImage(index)}
+                            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            size="sm"
+                          >
+                            <FiX className="w-3 h-3" />
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          size="sm"
-                        >
-                          <FiX className="w-3 h-3" />
-                        </Button>
-                        {index === 0 && (
-                          <Badge className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs">
-                            Main
-                          </Badge>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -504,7 +599,15 @@ const AddProductPage = () => {
                 <h2 className="text-lg font-semibold mb-4">Preview</h2>
                 <div className="border rounded-lg p-4 bg-gray-50">
                   <div className="aspect-square bg-gray-200 rounded-lg mb-3 flex items-center justify-center">
-                    {previewImages[0] ? (
+                    {existingImages[0] ? (
+                      <Image
+                        src={`http://localhost:3001${existingImages[0]}`}
+                        alt="Preview"
+                        width={200}
+                        height={200}
+                        className="object-cover rounded-lg"
+                      />
+                    ) : previewImages[0] ? (
                       <Image
                         src={previewImages[0]}
                         alt="Preview"
@@ -552,4 +655,4 @@ const AddProductPage = () => {
   );
 };
 
-export default AddProductPage;
+export default EditProductPage;

@@ -90,7 +90,7 @@ export const CartProvider = ({ children }) => {
     0
   );
   const totalPrice = state.items.reduce((total, item) => {
-    const price = parseFloat(item.price.replace(/[^0-9.-]+/g, ""));
+    const price = parseFloat(item.price);
     return total + price * item.quantity;
   }, 0);
 

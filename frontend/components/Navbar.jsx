@@ -60,20 +60,25 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const navigation = [
-    {
-      name: "Home",
-      href: "/",
-    },
-    {
-      name: "All",
-      href: "/all",
-    },
-    {
-      name: "Contact",
-      href: "/contact",
-    },
+
+  const baseNavigation = [
+    { name: "Home", href: "/" },
+    { name: "All", href: "/all" },
+    { name: "Contact", href: "/contact" },
   ];
+
+  const adminNavigation = [
+    { name: "Orders", href: "/admin/orders" },
+    { name: "Products", href: "/admin/products" },
+   
+  ];
+
+  const navigation = pathname.startsWith("/admin")
+    ? [...baseNavigation, ...adminNavigation]
+    : baseNavigation;
+
+
+  
 
   // Check if link is active
   const isActiveLink = (href) => {
@@ -109,11 +114,11 @@ const Navbar = () => {
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">
               <FiPhone className="w-4 h-4" />
-              <span>+94 77 123 4567</span>
+              <span> +94 76 113 6607</span>
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-4 text-xs">
-            <span>Free shipping on orders over LKR 5,000</span>
+            <span>Free shipping on orders over LKR 10,000</span>
             <span className="text-red-400">|</span>
             <span>30-Day Returns</span>
           </div>
@@ -133,11 +138,11 @@ const Navbar = () => {
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3">
               <div className="relative w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-xl">MM</span>
+                <span className="text-white font-bold text-xl">MR</span>
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent">
-                  MiniMoto.lk
+                  MiniRider.lk
                 </h1>
                 <p className="text-xs text-gray-500 -mt-1">
                   Premium Collectibles
@@ -452,7 +457,7 @@ const Navbar = () => {
                 <div className="pt-4 border-t border-gray-200 space-y-2 text-sm text-gray-600">
                   <div className="flex items-center space-x-2">
                     <FiPhone className="w-4 h-4" />
-                    <span>+94 77 123 4567</span>
+                    <span> +94 76 113 6607</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <FiMapPin className="w-4 h-4" />
