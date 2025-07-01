@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 
 const generateToken = (user) => {
-  return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+  return jwt.sign({ id: user.id, email: user.email , role : user.role }, process.env.JWT_SECRET, {
     expiresIn: "1h",
   });
 };
@@ -46,9 +46,9 @@ export const login = async (req, res) => {
   if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
 
   const token = generateToken(user);
-  res.json({ token, user: { id: user.id, email: user.email } });
+  res.json({ token, user: { id: user.id, email: user.email , role : user.role} });
 };
 
 export const protectedRoute = (req, res) => {
-  res.json({ msg: `Welcome ${req.user.email}! This is a protected route.` });
+  res.status(200).json({id : req.user.id , email:req.user.email , role : req.user.role});
 };

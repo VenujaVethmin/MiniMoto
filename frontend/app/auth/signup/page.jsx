@@ -1,25 +1,26 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import axiosInstance from "@/lib/axiosInstance";
 import {
   FiEye,
   FiEyeOff,
   FiMail,
   FiLock,
-  FiUser,
   FiArrowRight,
   FiShield,
   FiCheck,
 } from "react-icons/fi";
 
 const SignUpPage = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -29,35 +30,50 @@ const SignUpPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
     // Clear error when user starts typing
-    if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: "" });
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+
+    // Clear general error
+    if (errors.general) {
+      setErrors((prev) => ({ ...prev, general: "" }));
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = "Full name is required";
-    if (!formData.email) newErrors.email = "Email is required";
-    if (!formData.email.includes("@"))
-      newErrors.email = "Please enter a valid email";
-    if (!formData.password) newErrors.password = "Password is required";
-    if (formData.password.length < 6)
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
-    if (!formData.confirmPassword)
+    }
+
+    if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Please confirm your password";
-    if (formData.password !== formData.confirmPassword) {
+    } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
-    if (!agreedToTerms)
+
+    if (!agreedToTerms) {
       newErrors.terms = "Please agree to the terms and conditions";
+    }
 
     return newErrors;
   };
@@ -66,6 +82,7 @@ const SignUpPage = () => {
     e.preventDefault();
     setIsLoading(true);
     setErrors({});
+    setSuccessMessage("");
 
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
@@ -75,16 +92,43 @@ const SignUpPage = () => {
     }
 
     try {
-      // Add your sign-up logic here
-      console.log("Sign up:", formData);
+      const response = await axiosInstance.post("/register", {
+        email: formData.email.trim(),
+        password: formData.password,
+      });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      if (response.status === 200 || response.status === 201) {
+        setSuccessMessage(
+          "Account created successfully! Redirecting to sign in..."
+        );
 
-      // Redirect to sign-in or dashboard
-      // router.push('/signin');
+        // Clear form
+        setFormData({
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
+        setAgreedToTerms(false);
+
+        // Redirect after a short delay
+        setTimeout(() => {
+          router.push("/auth/signin");
+        }, 2000);
+      }
     } catch (error) {
-      setErrors({ general: "Failed to create account. Please try again." });
+      console.error("Registration error:", error);
+
+      if (error.response?.data?.message) {
+        setErrors({ general: error.response.data.message });
+      } else if (error.response?.status === 400) {
+        setErrors({ general: "Invalid email or password format" });
+      } else if (error.response?.status === 409) {
+        setErrors({ general: "An account with this email already exists" });
+      } else if (error.response?.status >= 500) {
+        setErrors({ general: "Server error. Please try again later." });
+      } else {
+        setErrors({ general: "Failed to create account. Please try again." });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +145,7 @@ const SignUpPage = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent">
-                MiniMoto.lk
+                MiniMoto
               </h1>
               <p className="text-sm text-gray-500 -mt-1">
                 Premium Collectibles
@@ -118,9 +162,19 @@ const SignUpPage = () => {
 
         {/* Sign Up Card */}
         <Card className="bg-white shadow-xl border-0 rounded-2xl overflow-hidden">
-         
-
           <CardContent className="p-8">
+            {/* Success Message */}
+            {successMessage && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
+                <div className="flex items-center space-x-2">
+                  <FiCheck className="w-5 h-5 text-green-600" />
+                  <p className="text-green-600 text-sm font-medium">
+                    {successMessage}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Error Message */}
             {errors.general && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -131,33 +185,6 @@ const SignUpPage = () => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Full Name Field */}
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-gray-700 font-medium">
-                  Full Name
-                </Label>
-                <div className="relative">
-                  <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    id="name"
-                    name="name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className={`pl-10 h-12 rounded-xl border-2 transition-all duration-200 ${
-                      errors.name
-                        ? "border-red-300 focus:border-red-500 focus:ring-red-200"
-                        : "border-gray-200 focus:border-red-500 focus:ring-red-200"
-                    }`}
-                    disabled={isLoading}
-                  />
-                </div>
-                {errors.name && (
-                  <p className="text-red-500 text-sm">{errors.name}</p>
-                )}
-              </div>
-
               {/* Email Field */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-700 font-medium">

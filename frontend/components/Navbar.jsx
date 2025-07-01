@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   FiMenu,
   FiX,
@@ -36,6 +36,7 @@ const Navbar = () => {
 
   const { totalItems } = useCart();
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -91,6 +92,9 @@ const Navbar = () => {
   const handleSignIn = () => {
     // Handle sign in logic here
     console.log("Sign in clicked");
+
+    router.push("/auth/signin");
+    
     setIsUserDropdownOpen(false);
   };
 
