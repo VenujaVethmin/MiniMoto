@@ -1,4 +1,4 @@
-name: Deploy Frontend and Backend
+name: Minimal Deploy
 
 on:
   push:
@@ -12,24 +12,29 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v3
 
-    # Upload frontend folder
-    - name: Upload frontend
+    - name: Upload project files
       uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
-        source: "frontend/*"
+        source: "."     # send everything
         target: "/home/ubuntu/minirider"
 
-    # Upload backend folder
-    - name: Upload backend
-      uses: appleboy/scp-action@v0.1.4
+    - name: Restart PM2 apps
+      uses: appleboy/ssh-action@v0.1.7
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
-        source: "backend/*"
-        target: "/home/ubuntu/minirider"
+        script: |
+          cd /home/ubuntu/minirider/frontend
+          npm install
+          npm run build
+          pm2 restart frontend || pm2 start npm --name frontend -- start
+
+          cd /home/ubuntu/minirider/backend
+          npm install
+          pm2 restart backend || pm2 start npm --name backend -- start
