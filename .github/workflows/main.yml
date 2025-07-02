@@ -21,7 +21,7 @@ jobs:
         key: ${{ secrets.PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
         source: "frontend/*"
-        target: "/home/ubuntu/minirider/frontend"
+        target: "/home/ubuntu/minirider"
 
     # Upload backend folder
     - name: Upload backend
@@ -32,4 +32,4 @@ jobs:
         key: ${{ secrets.PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
         source: "backend/*"
-        target: "/home/ubuntu/minirider/backend"
+        target: "/home/ubuntu/minirider"
