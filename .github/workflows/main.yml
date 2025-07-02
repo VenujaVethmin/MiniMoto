@@ -1,4 +1,4 @@
-name: Minimal Deploy
+name: Deploy to Lightsail (Frontend & Backend)
 
 on:
   push:
@@ -9,20 +9,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    # 1. Checkout your repository
+    - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Upload project files
+    # 2. Upload frontend and backend (excluding node_modules)
+    - name: Upload frontend and backend
       uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.PRIVATE_KEY }}
-        port: ${{ secrets.PORT }}
-        source: "."     # send everything
-        target: "/home/ubuntu/minirider"
+        username: ${{ secrets.USERNAME }}         # should be 'bitnami'
+        key: ${{ secrets.PRIVATE_KEY }}           # your .pem file content
+        port: ${{ secrets.PORT }}                 # usually 22
+        source: "frontend/**,backend/**,!**/node_modules/**"
+        target: "/home/bitnami/minirider"
+        debug: true
 
-    - name: Restart PM2 apps
+    # 3. SSH into the server, install dependencies, build, and restart apps using PM2
+    - name: SSH and deploy
       uses: appleboy/ssh-action@v0.1.7
       with:
         host: ${{ secrets.HOST }}
@@ -30,11 +34,13 @@ jobs:
         key: ${{ secrets.PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
         script: |
-          cd /home/ubuntu/minirider/frontend
+          cd /home/bitnami/minirider/backend
+          npm install
+          pm2 restart backend || pm2 start npm --name backend -- start
+
+          cd /home/bitnami/minirider/frontend
           npm install
           npm run build
           pm2 restart frontend || pm2 start npm --name frontend -- start
 
-          cd /home/ubuntu/minirider/backend
-          npm install
-          pm2 restart backend || pm2 start npm --name backend -- start
+          pm2 save
