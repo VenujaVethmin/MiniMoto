@@ -19,7 +19,7 @@ const app = express();
 app.use(cors());
 app.use(
   cors({
-    origin: "http://13.250.51.126:3000", // or your actual frontend URL or domain
+    origin: "https://minirider.run.place", // or your actual frontend URL or domain
   })
 );
   
