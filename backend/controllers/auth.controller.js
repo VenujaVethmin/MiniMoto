@@ -52,3 +52,17 @@ export const login = async (req, res) => {
 export const protectedRoute = (req, res) => {
   res.status(200).json({id : req.user.id , email:req.user.email , role : req.user.role});
 };
+
+
+export const getAllUsers = async (req, res) => {
+
+  try {
+    const data = await prisma.user.findMany()
+
+    return res.status(200).json(data);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ msg: "Internal server error" });
+    
+  }
+}
