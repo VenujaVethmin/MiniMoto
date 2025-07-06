@@ -58,7 +58,6 @@ const SignInPage = () => {
 
     return newErrors;
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -78,45 +77,28 @@ const SignInPage = () => {
         password,
       });
 
-      if (response.status === 200) {
+      Cookies.set("token", response.data.token, {
+        expires: 1,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+        path: "/",
+      });
 
-        Cookies.set("token", response.data.token, {
-          expires: 1, // 1 day
-          secure: process.env.NODE_ENV === "production", // secure only in production
-          sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax", // more relaxed in dev
-          path: "/",
-        });
+      setSuccessMessage("Sign in successful! Redirecting...");
 
-        setSuccessMessage("Sign in successful! Redirecting...");
-
-        // Role-based routing
-        if (response.data.user.role === "ADMIN") {
-          setTimeout(() => router.push("/admin/orders"), 1500);
-        } else if (response.data.user.role === "USER") {
-          setTimeout(() => router.push("/"), 1500);
-        } else {
-          // Default fallback
-          setTimeout(() => router.push("/"), 1500);
-        }
-      }
+      const redirectPath =
+        response.data.user.role === "ADMIN" ? "/admin/orders" : "/";
+      setTimeout(() => router.push(redirectPath), 1500);
     } catch (error) {
-      
-
-      if (error.response?.data?.msg) {
-        setErrors({ general: error.response.data.msg });
-      } else if (error.response?.status === 400) {
-        setErrors({ general: "Invalid email or password" });
-      } else if (error.response?.status === 401) {
-        setErrors({ general: "Unauthorized. Please check your credentials." });
-      } else if (error.response?.status >= 500) {
-        setErrors({ general: "Server error. Please try again later." });
-      } else {
-        setErrors({ general: "Failed to sign in. Please try again." });
-      }
+      console.error(error)
+      const msg =
+        error.response?.data?.msg || "An error occurred. Please try again.";
+      setErrors({ general: msg });
     } finally {
       setIsLoading(false);
     }
   };
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
