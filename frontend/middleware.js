@@ -166,5 +166,5 @@ function unauthorizedResponse(message) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin1/:path*"],
 };
