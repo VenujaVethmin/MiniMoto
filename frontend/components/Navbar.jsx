@@ -25,6 +25,8 @@ import { Badge } from "@/components/ui/badge";
 
 import CartSidebar from "./CartSidebar";
 import { useCart } from "@/context/cartContext";
+import useSession from "@/lib/session";
+import { logOut } from "@/lib/auth-hooks";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,6 +39,12 @@ const Navbar = () => {
   const { totalItems } = useCart();
   const pathname = usePathname();
   const router = useRouter();
+
+  const { user } = useSession();
+
+
+
+  
 
   useEffect(() => {
     const handleScroll = () => {
@@ -74,7 +82,7 @@ const Navbar = () => {
    
   ];
 
-  const navigation = pathname.startsWith("/admin")
+  const navigation = user?.role === "ADMIN"
     ? [...baseNavigation, ...adminNavigation]
     : baseNavigation;
 
@@ -105,8 +113,7 @@ const Navbar = () => {
   };
 
   const handleSignOut = () => {
-    // Handle sign out logic here
-    setIsLoggedIn(false);
+   logOut(router)
     setIsUserDropdownOpen(false);
   };
 
@@ -256,7 +263,7 @@ const Navbar = () => {
                       transition={{ duration: 0.2 }}
                       className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50"
                     >
-                      {!isLoggedIn ? (
+                      {!user ? (
                         // Not logged in - show sign in/up options
                         <>
                           <div className="px-4 py-3 border-b border-gray-100">
@@ -282,45 +289,16 @@ const Navbar = () => {
                         // Logged in - show user options
                         <>
                           <div className="px-4 py-3 border-b border-gray-100">
-                            <p className="text-sm font-medium text-gray-900">
-                              John Doe
-                            </p>
+                            
                             <p className="text-xs text-gray-500">
-                              john.doe@email.com
+                              {user?.email}
                             </p>
                           </div>
-                          <Link
-                            href="/profile"
-                            className="flex items-center px-4 py-3 text-gray-700 hover:text-red-600 hover:bg-red-50 transition-colors duration-200"
-                            onClick={() => setIsUserDropdownOpen(false)}
-                          >
-                            <FiUser className="w-4 h-4 mr-3" />
-                            My Profile
-                          </Link>
-                          <Link
-                            href="/orders"
-                            className="flex items-center px-4 py-3 text-gray-700 hover:text-red-600 hover:bg-red-50 transition-colors duration-200"
-                            onClick={() => setIsUserDropdownOpen(false)}
-                          >
-                            <FiShoppingCart className="w-4 h-4 mr-3" />
-                            My Orders
-                          </Link>
-                          <Link
-                            href="/wishlist"
-                            className="flex items-center px-4 py-3 text-gray-700 hover:text-red-600 hover:bg-red-50 transition-colors duration-200"
-                            onClick={() => setIsUserDropdownOpen(false)}
-                          >
-                            <FiHeart className="w-4 h-4 mr-3" />
-                            Wishlist
-                          </Link>
-                          <Link
-                            href="/settings"
-                            className="flex items-center px-4 py-3 text-gray-700 hover:text-red-600 hover:bg-red-50 transition-colors duration-200"
-                            onClick={() => setIsUserDropdownOpen(false)}
-                          >
-                            <FiSettings className="w-4 h-4 mr-3" />
-                            Settings
-                          </Link>
+                          
+                         
+                          
+                         
+                         
                           <div className="border-t border-gray-100 mt-2">
                             <button
                               onClick={handleSignOut}

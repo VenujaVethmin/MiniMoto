@@ -9,25 +9,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Checkout your repository
     - name: 📥 Checkout repository
       uses: actions/checkout@v3
 
-    # 2. Upload frontend and backend (excluding node_modules)
     - name: 📤 Upload frontend and backend
       uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}         # typically 'bitnami'
-        key: ${{ secrets.PRIVATE_KEY }}           # your private SSH key
-        port: ${{ secrets.PORT }}                 # default is 22
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.PRIVATE_KEY }}
+        port: ${{ secrets.PORT }}
         source: "./frontend,./backend"
         target: "/home/bitnami/minirider"
-        rm: true                                  # remove extra files on target
-        strip_components: 1                       # flatten path during upload
+        rm: true
+        strip_components: 1
         debug: true
 
-    # 3. SSH into the server and deploy
     - name: 🚀 SSH and deploy with PM2
       uses: appleboy/ssh-action@v0.1.7
       with:
@@ -37,15 +34,26 @@ jobs:
         port: ${{ secrets.PORT }}
         script: |
           export PATH=/opt/bitnami/nodejs/bin:$PATH
+
           cd /home/bitnami/minirider/backend
-          npm install 
+          npm install
           npx prisma generate
           npx prisma db push
-          pm2 start npm --name backend -- start || pm2 restart backend
+
+          if pm2 describe backend > /dev/null; then
+            pm2 restart backend
+          else
+            pm2 start npm --name backend -- start
+          fi
 
           cd /home/bitnami/minirider/frontend
-          npm install 
+          npm install
           npm run build
-          pm2 start npm --name frontend -- start || pm2 restart frontend
+
+          if pm2 describe frontend > /dev/null; then
+            pm2 restart frontend
+          else
+            pm2 start npm --name frontend -- start
+          fi
 
           pm2 save
